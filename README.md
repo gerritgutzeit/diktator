@@ -18,7 +18,21 @@ Läuft im Infobereich. Dunkles Overlay mit Transkript, Verlauf, Kurzfassung und 
 
 Der API-Key und der Endpunkt gehören **nur in die App-Einstellungen** (lokal per DPAPI verschlüsselt) oder optional in die Umgebungsvariable `DIKTATOR_API_KEY`. Beides kommt nicht ins Git-Repo.
 
+## Dokumentation
+
+Architekturentscheidungen (Warum, nicht nur Wie): [docs/adr](docs/adr/README.md).
+
 ## Starten (Entwicklung)
+
+Rust (aktuell, Slint, `crates/diktator`):
+
+```powershell
+cargo run -p diktator
+```
+
+MSVC-Buildtools und das Windows SDK müssen installiert sein. Dieselben Dateien unter `%LOCALAPPDATA%\Diktator\` wie bisher.
+
+C# (WPF, parallel bis 1.3):
 
 ```powershell
 dotnet run --project src/Diktator
@@ -30,15 +44,17 @@ Beispiel-Endpunkt: `https://<dein-host>/v1/audio/transcriptions`
 
 ## Release (GitHub)
 
-Unter [Releases](https://github.com/gerritgutzeit/diktator/releases) liegt `Diktator-win-Setup.exe`. Einmal installieren; neue Versionen prüfst du unter Einstellungen mit **Auf Aktualisierung prüfen**.
+Unter [Releases](https://github.com/gerritgutzeit/diktator/releases) liegt `Diktator-win-Setup.exe`. Ab **v2.0.0** ist das die Rust-App. Einmal installieren; neue Versionen prüfst du unter Einstellungen mit **Auf Aktualisierung prüfen**.
 
-Jeder Tag `v*` (z. B. `v1.3.0`) baut auf `windows-latest` den Installer und die Update-Pakete.
+Jeder Tag `v*` (z. B. `v2.0.0`) baut auf `windows-latest` den Installer und die Update-Pakete. Velopack-Id bleibt `Diktator`, damit 1.3-Installationen auf 2.0 aktualisieren können.
 
 Manuell:
 
 ```powershell
-dotnet publish src/Diktator -c Release -r win-x64 --self-contained -o publish
-vpk pack -u Diktator -v 1.3.0 -p publish --mainExe Diktator.exe -i src/Diktator/Assets/app.ico
+cargo build --release -p diktator
+New-Item -ItemType Directory -Force publish | Out-Null
+Copy-Item target\release\diktator.exe publish\Diktator.exe
+vpk pack -u Diktator -v 2.0.0 -p publish --mainExe Diktator.exe -i src/Diktator/Assets/app.ico
 ```
 
 ## Verhalten

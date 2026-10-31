@@ -1,0 +1,670 @@
+export struct HistoryItem {
+    file-name: string,
+    summary: string,
+    when-label: string,
+    selected: bool,
+}
+
+export struct DeviceCandidate {
+    root: string,
+    title: string,
+    detail: string,
+    paired: bool,
+}
+
+component Glyph inherits Path {
+    in property <brush> ink: #C4C4CC;
+    width: 16px;
+    height: 16px;
+    viewbox-x: 0;
+    viewbox-y: 0;
+    viewbox-width: 24;
+    viewbox-height: 24;
+    stroke: root.ink;
+    stroke-width: 1.7px;
+    fill: transparent;
+}
+
+component AppIcon inherits Rectangle {
+    in property <string> kind;
+    in property <brush> ink: #C4C4CC;
+    in property <bool> danger: false;
+    callback clicked;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: touch.has-hover ? (root.danger ? #3A1618 : #2A2A30) : transparent;
+    VerticalLayout {
+        alignment: center;
+        HorizontalLayout {
+            alignment: center;
+            if root.kind == "menu": Glyph { ink: touch.has-hover ? #F0F0F4 : root.ink; commands: "M 5 7 L 19 7 M 5 12 L 19 12 M 5 17 L 19 17"; }
+            if root.kind == "refresh": Glyph { ink: touch.has-hover ? #F0F0F4 : root.ink; commands: "M 21 3 L 21 9 L 15 9 M 20 8 A 8 8 0 1 0 20.5 14"; }
+            if root.kind == "settings": Glyph {
+                ink: touch.has-hover ? #F0F0F4 : root.ink;
+                commands: "M 7 5 L 7 19 M 12 5 L 12 19 M 17 5 L 17 19 M 5 9 L 9 9 M 10 15 L 14 15 M 15 8 L 19 8";
+            }
+            if root.kind == "hide": Glyph { ink: touch.has-hover ? #F0F0F4 : root.ink; stroke-width: 1.9px; commands: "M 6 12 L 18 12"; }
+            if root.kind == "close": Glyph { ink: touch.has-hover ? #FF8A8A : root.ink; commands: "M 7 7 L 17 17 M 17 7 L 7 17"; }
+            if root.kind == "trash": Glyph { ink: touch.has-hover ? #E8E8ED : root.ink; commands: "M 6 8 L 18 8 M 9.2 8 L 9.7 6.2 L 14.3 6.2 L 14.8 8 M 8.2 8 L 8.7 18.5 L 15.3 18.5 L 15.8 8"; }
+        }
+    }
+    touch := TouchArea { clicked => { root.clicked(); } }
+}
+
+component PillButton inherits Rectangle {
+    in property <string> label;
+    in property <bool> primary: false;
+    in property <bool> enabled: true;
+    callback clicked;
+    border-radius: 7px;
+    height: 30px;
+    min-width: 88px;
+    border-width: root.primary ? 0px : 1px;
+    border-color: #2E2E36;
+    background: !root.enabled ? #1C1C20 : (root.primary ? (touch.has-hover ? #7B6CFF : #6D5EF6) : (touch.has-hover ? #2A2A30 : transparent));
+    opacity: root.enabled ? 1.0 : 0.38;
+    HorizontalLayout {
+        padding-left: 14px;
+        padding-right: 14px;
+        alignment: center;
+        Text {
+            text: root.label;
+            color: #F2F2F6;
+            font-size: 12.5px;
+            font-weight: 500;
+            vertical-alignment: center;
+        }
+    }
+    touch := TouchArea {
+        enabled: root.enabled;
+        clicked => { root.clicked(); }
+    }
+}
+
+component FieldLabel inherits Text {
+    in property <string> caption;
+    text: root.caption;
+    color: #8A8A94;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+component DarkField inherits Rectangle {
+    in-out property <string> value;
+    in property <string> placeholder;
+    in property <bool> password: false;
+    border-radius: 8px;
+    background: #1C1C20;
+    border-width: 1px;
+    border-color: #2A2A32;
+    height: 34px;
+    if root.value == "": Text {
+        x: 12px;
+        width: parent.width - 24px;
+        height: parent.height;
+        text: root.placeholder;
+        color: #5C5C66;
+        font-size: 13px;
+        vertical-alignment: center;
+    }
+    TextInput {
+        x: 12px;
+        width: parent.width - 24px;
+        height: parent.height;
+        text <=> root.value;
+        single-line: true;
+        input-type: root.password ? InputType.password : InputType.text;
+        font-size: 13px;
+        color: #E8E8ED;
+        vertical-alignment: center;
+    }
+}
+
+component Hairline inherits Rectangle {
+    height: 1px;
+    background: #25252C;
+}
+
+component ResizeEdge inherits TouchArea {
+    in property <int> edge;
+    in property <MouseCursor> cursor: MouseCursor.default;
+    callback started(int);
+    callback dragged;
+    mouse-cursor: root.cursor;
+    pointer-event(event) => {
+        if event.kind == PointerEventKind.down {
+            root.started(root.edge);
+        }
+    }
+    moved => {
+        if root.pressed {
+            root.dragged();
+        }
+    }
+}
+
+export component AppWindow inherits Window {
+    title: "Diktator";
+    icon: @image-url("../../../src/Diktator/Assets/app-48.png");
+    no-frame: true;
+    min-width: 640px;
+    min-height: 420px;
+    preferred-width: 740px;
+    preferred-height: 500px;
+    background: #111113;
+    default-font-family: "Segoe UI";
+
+    in-out property <string> status-text: "Warte auf Diktiergerät…";
+    in-out property <int> status-kind: 0;
+    in-out property <bool> busy: false;
+    in-out property <bool> settings-open: false;
+    in-out property <bool> history-open: true;
+    in-out property <bool> has-transcript: false;
+    in-out property <string> transcript: "";
+    in-out property <string> current-file: "";
+    in-out property <string> current-when: "";
+    in-out property <string> copy-label: "Kopieren";
+    in-out property <string> error-text: "";
+    in-out property <[HistoryItem]> history: [];
+    in-out property <int> selected-index: -1;
+
+    in-out property <string> settings-endpoint: "";
+    in-out property <string> settings-api-key: "";
+    in-out property <string> settings-language: "de";
+    in-out property <bool> settings-autostart: false;
+    in-out property <string> settings-transcript-folder: "";
+    in-out property <string> settings-message: "";
+    in-out property <string> settings-device-summary: "Noch kein Gerät gekoppelt. Es gilt die automatische Philips-Erkennung.";
+    in-out property <bool> settings-has-paired: false;
+    in-out property <[DeviceCandidate]> settings-devices: [];
+    in-out property <string> app-version: "0.1.0";
+    in-out property <string> update-status: "";
+    in-out property <bool> has-update: false;
+
+    callback toggle-history();
+    callback toggle-settings();
+    callback transcribe-now();
+    callback copy-transcript();
+    callback delete-current();
+    callback save-settings();
+    callback test-connection();
+    callback browse-folder();
+    callback export-all();
+    callback open-folder();
+    callback check-updates();
+    callback install-update();
+    callback pair-device(int);
+    callback unpair-device();
+    callback select-history(int);
+    callback delete-history(int);
+    callback request-hide();
+    callback request-exit();
+    callback begin-drag();
+    callback drag-by(float, float);
+    callback begin-resize(int);
+    callback resize-move();
+
+    Rectangle {
+        border-width: 1px;
+        border-color: #2A2A32;
+        background: #111113;
+
+        VerticalLayout {
+            spacing: 0px;
+
+            Rectangle {
+                height: 40px;
+                background: #141416;
+                HorizontalLayout {
+                    padding-left: 12px;
+                    padding-right: 6px;
+                    spacing: 12px;
+
+                    VerticalLayout {
+                        alignment: center;
+                        horizontal-stretch: 0;
+                        HorizontalLayout {
+                            spacing: 8px;
+                            Image {
+                                source: @image-url("../../../src/Diktator/Assets/app-48.png");
+                                width: 18px;
+                                height: 18px;
+                            }
+                            Text {
+                                text: "Diktator";
+                                color: #F0F0F4;
+                                font-size: 13px;
+                                font-weight: 600;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    VerticalLayout {
+                        alignment: center;
+                        horizontal-stretch: 0;
+                        Rectangle {
+                            height: 24px;
+                            border-radius: 12px;
+                            background: #1C1C20;
+                            HorizontalLayout {
+                                padding-left: 8px;
+                                padding-right: 10px;
+                                spacing: 7px;
+                                VerticalLayout {
+                                    alignment: center;
+                                    Rectangle {
+                                        width: 8px;
+                                        height: 8px;
+                                        border-radius: 4px;
+                                        background: root.status-kind == 4 ? #3DDC97 : (root.status-kind == 5 ? #FF6B6B : (root.status-kind == 3 || root.status-kind == 1 ? #6D5EF6 : #6A6A72));
+                                    }
+                                }
+                                Text {
+                                    text: root.status-text;
+                                    color: #C4C4CC;
+                                    font-size: 12px;
+                                    height: 24px;
+                                    vertical-alignment: center;
+                                    overflow: elide;
+                                    max-width: 240px;
+                                }
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        horizontal-stretch: 1;
+                        background: transparent;
+                        drag := TouchArea {
+                            mouse-cursor: MouseCursor.move;
+                            pointer-event(event) => {
+                                if event.kind == PointerEventKind.down {
+                                    root.begin-drag();
+                                }
+                            }
+                            moved => {
+                                if drag.pressed {
+                                    root.drag-by(0, 0);
+                                }
+                            }
+                        }
+                    }
+
+                    VerticalLayout {
+                        alignment: center;
+                        horizontal-stretch: 0;
+                        HorizontalLayout {
+                            spacing: 2px;
+                            AppIcon { kind: "menu"; clicked => { root.toggle-history(); } }
+                            AppIcon { kind: "refresh"; clicked => { root.transcribe-now(); } }
+                            AppIcon { kind: "settings"; clicked => { root.toggle-settings(); } }
+                            VerticalLayout {
+                                alignment: center;
+                                Rectangle { width: 1px; height: 14px; background: #2E2E36; }
+                            }
+                            AppIcon { kind: "hide"; clicked => { root.request-hide(); } }
+                            AppIcon { kind: "close"; danger: true; clicked => { root.request-hide(); } }
+                        }
+                    }
+                }
+            }
+
+            Hairline {}
+
+            if !root.settings-open: HorizontalLayout {
+                spacing: 0px;
+                vertical-stretch: 1;
+
+                if root.history-open: Rectangle {
+                    width: 232px;
+                    background: #141416;
+                    clip: true;
+                    VerticalLayout {
+                        padding-top: 12px;
+                        padding-bottom: 8px;
+                        padding-left: 8px;
+                        padding-right: 8px;
+                        spacing: 6px;
+                        HorizontalLayout {
+                            padding-left: 8px;
+                            padding-bottom: 2px;
+                            Text {
+                                text: "Verlauf";
+                                color: #6E6E78;
+                                font-size: 10.5px;
+                                font-weight: 700;
+                            }
+                        }
+                        if root.history.length == 0: HorizontalLayout {
+                            padding-left: 8px;
+                            padding-right: 8px;
+                            Text {
+                                text: "Noch keine Transkripte";
+                                color: #5C5C66;
+                                font-size: 12px;
+                                wrap: word-wrap;
+                            }
+                        }
+                        Flickable {
+                            vertical-stretch: 1;
+                            VerticalLayout {
+                                alignment: start;
+                                spacing: 2px;
+                                for item[index] in root.history: Rectangle {
+                                    vertical-stretch: 0;
+                                    border-radius: 8px;
+                                    background: item.selected ? #1E1C2A : (hover.has-hover ? #1A1A1E : transparent);
+                                    hover := TouchArea { clicked => { root.select-history(index); } }
+                                    HorizontalLayout {
+                                        spacing: 0px;
+                                        Rectangle {
+                                            width: 2px;
+                                            background: item.selected ? #6D5EF6 : transparent;
+                                        }
+                                        VerticalLayout {
+                                            padding-left: 10px;
+                                            padding-right: 2px;
+                                            padding-top: 8px;
+                                            padding-bottom: 8px;
+                                            spacing: 2px;
+                                            horizontal-stretch: 1;
+                                            HorizontalLayout {
+                                                spacing: 2px;
+                                                Text {
+                                                    text: item.file-name;
+                                                    color: item.selected ? #F0F0F4 : #D4D4DC;
+                                                    font-size: 12.5px;
+                                                    font-weight: 600;
+                                                    overflow: elide;
+                                                    horizontal-stretch: 1;
+                                                    vertical-alignment: center;
+                                                }
+                                                AppIcon {
+                                                    kind: "trash";
+                                                    ink: #6A6A72;
+                                                    width: 22px;
+                                                    height: 22px;
+                                                    clicked => { root.delete-history(index); }
+                                                }
+                                            }
+                                            if item.summary != "": Text {
+                                                text: item.summary;
+                                                color: #8A8A94;
+                                                font-size: 11.5px;
+                                                wrap: word-wrap;
+                                            }
+                                            Text {
+                                                text: item.when-label;
+                                                color: #5C5C66;
+                                                font-size: 10.5px;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if root.history-open: Rectangle {
+                    width: 1px;
+                    background: #25252C;
+                }
+
+                Rectangle {
+                    horizontal-stretch: 1;
+                    background: #111113;
+                    VerticalLayout {
+                        padding-top: 16px;
+                        padding-bottom: 12px;
+                        padding-left: 20px;
+                        padding-right: 16px;
+                        spacing: 0px;
+
+                        if root.has-transcript && root.current-file != "": HorizontalLayout {
+                            padding-bottom: 10px;
+                            spacing: 8px;
+                            Text {
+                                text: root.current-file;
+                                color: #C8C8D0;
+                                font-size: 12px;
+                                font-weight: 600;
+                                overflow: elide;
+                                horizontal-stretch: 1;
+                                vertical-alignment: center;
+                            }
+                            Text {
+                                text: root.current-when;
+                                color: #6A6A72;
+                                font-size: 11px;
+                                vertical-alignment: center;
+                            }
+                        }
+                        if root.has-transcript && root.current-file != "": Hairline { }
+
+                        if root.has-transcript: Rectangle {
+                            vertical-stretch: 1;
+                            clip: true;
+                            Flickable {
+                                x: 0px;
+                                y: 0px;
+                                width: parent.width;
+                                height: parent.height;
+                                Text {
+                                    y: 12px;
+                                    width: parent.width;
+                                    text: root.transcript;
+                                    color: #E8E8ED;
+                                    font-size: 15px;
+                                    wrap: word-wrap;
+                                    vertical-alignment: top;
+                                }
+                            }
+                        }
+
+                        if !root.has-transcript: VerticalLayout {
+                            vertical-stretch: 1;
+                            alignment: center;
+                            spacing: 10px;
+                            HorizontalLayout {
+                                alignment: center;
+                                Glyph {
+                                    width: 28px;
+                                    height: 28px;
+                                    viewbox-width: 24;
+                                    viewbox-height: 24;
+                                    ink: #6D5EF6;
+                                    commands: "M 12 3 A 4 4 0 0 1 16 7 L 16 12 A 4 4 0 0 1 8 12 L 8 7 A 4 4 0 0 1 12 3 M 6 12 A 6 6 0 0 0 18 12 M 12 18 L 12 21 M 9 21 L 15 21";
+                                }
+                            }
+                            Text {
+                                text: "Warte auf Diktiergerät…";
+                                color: #6E6E78;
+                                font-size: 13px;
+                                horizontal-alignment: center;
+                            }
+                        }
+
+                        if root.error-text != "": VerticalLayout {
+                            padding-bottom: 8px;
+                            Text {
+                                text: root.error-text;
+                                color: #FF6B6B;
+                                font-size: 12px;
+                                wrap: word-wrap;
+                            }
+                        }
+
+                        Hairline {}
+                        HorizontalLayout {
+                            padding-top: 10px;
+                            spacing: 8px;
+                            alignment: end;
+                            PillButton { label: "Löschen"; enabled: root.has-transcript; clicked => { root.delete-current(); } }
+                            PillButton { label: root.copy-label; primary: true; enabled: root.has-transcript; clicked => { root.copy-transcript(); } }
+                        }
+                    }
+                }
+            }
+
+            if root.settings-open: Rectangle {
+                vertical-stretch: 1;
+                background: #111113;
+                clip: true;
+                Flickable {
+                    VerticalLayout {
+                        padding-top: 20px;
+                        padding-bottom: 20px;
+                        padding-left: 24px;
+                        padding-right: 24px;
+                        spacing: 8px;
+
+                        Text { text: "Einstellungen"; color: #F0F0F4; font-size: 16px; font-weight: 600; }
+                        Text { text: "API und Speicherort für Transkripte."; color: #6E6E78; font-size: 12px; }
+                        Rectangle { height: 8px; background: transparent; }
+
+                        FieldLabel { caption: "Endpunkt"; }
+                        DarkField { value <=> root.settings-endpoint; placeholder: "https://…/v1/audio/transcriptions"; }
+                        Rectangle { height: 4px; background: transparent; }
+                        FieldLabel { caption: "API-Key"; }
+                        DarkField { value <=> root.settings-api-key; placeholder: "freellmapi-…"; password: true; }
+                        Rectangle { height: 4px; background: transparent; }
+                        FieldLabel { caption: "Sprache"; }
+                        DarkField { value <=> root.settings-language; placeholder: "de"; width: 88px; }
+                        Rectangle { height: 8px; background: transparent; }
+
+                        HorizontalLayout {
+                            spacing: 10px;
+                            Rectangle {
+                                width: 16px;
+                                height: 16px;
+                                border-radius: 4px;
+                                border-width: 1px;
+                                border-color: root.settings-autostart ? #6D5EF6 : #3A3A42;
+                                background: root.settings-autostart ? #6D5EF6 : #1C1C20;
+                                if root.settings-autostart: Glyph {
+                                    width: 12px;
+                                    height: 12px;
+                                    x: 2px;
+                                    y: 2px;
+                                    commands: "M 5 12 L 10 17 L 19 7";
+                                    ink: #FFFFFF;
+                                    stroke-width: 2px;
+                                }
+                                TouchArea { clicked => { root.settings-autostart = !root.settings-autostart; } }
+                            }
+                            Text { text: "Beim Windows-Start ausführen"; color: #E8E8ED; font-size: 13px; vertical-alignment: center; }
+                        }
+
+                        Rectangle { height: 10px; background: transparent; }
+                        Hairline {}
+                        Rectangle { height: 10px; background: transparent; }
+
+                        FieldLabel { caption: "Diktiergerät"; }
+                        Text {
+                            text: root.settings-device-summary;
+                            color: #C8C8D0;
+                            font-size: 13px;
+                            wrap: word-wrap;
+                        }
+                        Text {
+                            text: "Beim Koppeln legt Diktator eine versteckte Datei .diktator auf dem Laufwerk ab und merkt sich den Volume-Namen. Der Buchstabe (E:) darf sich ändern.";
+                            color: #5C5C66;
+                            font-size: 11px;
+                            wrap: word-wrap;
+                        }
+                        if root.settings-has-paired: HorizontalLayout {
+                            PillButton { label: "Kopplung lösen"; clicked => { root.unpair-device(); } }
+                        }
+                        if root.settings-devices.length == 0: Text {
+                            text: "Kein Wechseldatenträger angeschlossen.";
+                            color: #6E6E78;
+                            font-size: 12px;
+                        }
+                        for item[index] in root.settings-devices: HorizontalLayout {
+                            spacing: 8px;
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                spacing: 2px;
+                                Text {
+                                    text: item.title;
+                                    color: #E8E8ED;
+                                    font-size: 13px;
+                                    font-weight: 600;
+                                }
+                                Text {
+                                    text: item.detail;
+                                    color: #8A8A94;
+                                    font-size: 11px;
+                                }
+                            }
+                            PillButton {
+                                label: item.paired ? "Gekoppelt" : "Koppeln";
+                                primary: !item.paired;
+                                enabled: !item.paired;
+                                clicked => { root.pair-device(index); }
+                            }
+                        }
+
+                        Rectangle { height: 10px; background: transparent; }
+                        Hairline {}
+                        Rectangle { height: 10px; background: transparent; }
+
+                        FieldLabel { caption: "Transkript-Ordner"; }
+                        HorizontalLayout {
+                            spacing: 8px;
+                            DarkField {
+                                horizontal-stretch: 1;
+                                value <=> root.settings-transcript-folder;
+                                placeholder: "Ordner wählen, in dem alle Texte landen";
+                            }
+                            PillButton { label: "Ordner…"; clicked => { root.browse-folder(); } }
+                        }
+                        Text {
+                            text: "Neue Transkripte landen dort als Datum_Uhrzeit Titel.txt";
+                            color: #5C5C66;
+                            font-size: 11px;
+                            wrap: word-wrap;
+                        }
+                        HorizontalLayout {
+                            spacing: 8px;
+                            PillButton { label: "Alles ablegen"; clicked => { root.export-all(); } }
+                            PillButton { label: "Ordner öffnen"; clicked => { root.open-folder(); } }
+                        }
+
+                        Rectangle { height: 10px; background: transparent; }
+                        HorizontalLayout {
+                            spacing: 8px;
+                            PillButton { label: "Speichern"; primary: true; clicked => { root.save-settings(); } }
+                            PillButton { label: "Verbindung testen"; clicked => { root.test-connection(); } }
+                        }
+                        Text { text: root.settings-message; color: #8A8A94; font-size: 12px; wrap: word-wrap; }
+
+                        Rectangle { height: 12px; background: transparent; }
+                        Hairline {}
+                        Rectangle { height: 10px; background: transparent; }
+
+                        Text { text: "Version " + root.app-version; color: #5C5C66; font-size: 11px; }
+                        HorizontalLayout {
+                            spacing: 8px;
+                            PillButton { label: "Auf Aktualisierung prüfen"; clicked => { root.check-updates(); } }
+                            PillButton { label: "Aktualisieren"; primary: true; enabled: root.has-update; clicked => { root.install-update(); } }
+                        }
+                        Text { text: root.update-status; color: #8A8A94; font-size: 12px; wrap: word-wrap; }
+                    }
+                }
+            }
+        }
+
+        ResizeEdge { x: 0px; y: 0px; width: parent.width; height: 6px; edge: 3; cursor: MouseCursor.ns-resize; started(edge) => { root.begin-resize(edge); } dragged => { root.resize-move(); } }
+        ResizeEdge { x: 0px; y: parent.height - 6px; width: parent.width; height: 6px; edge: 4; cursor: MouseCursor.ns-resize; started(edge) => { root.begin-resize(edge); } dragged => { root.resize-move(); } }
+        ResizeEdge { x: 0px; y: 0px; width: 6px; height: parent.height; edge: 1; cursor: MouseCursor.ew-resize; started(edge) => { root.begin-resize(edge); } dragged => { root.resize-move(); } }
+        ResizeEdge { x: parent.width - 6px; y: 0px; width: 6px; height: parent.height; edge: 2; cursor: MouseCursor.ew-resize; started(edge) => { root.begin-resize(edge); } dragged => { root.resize-move(); } }
+        ResizeEdge { x: 0px; y: 0px; width: 12px; height: 12px; edge: 5; cursor: MouseCursor.nwse-resize; started(edge) => { root.begin-resize(edge); } dragged => { root.resize-move(); } }
+        ResizeEdge { x: parent.width - 12px; y: 0px; width: 12px; height: 12px; edge: 6; cursor: MouseCursor.nesw-resize; started(edge) => { root.begin-resize(edge); } dragged => { root.resize-move(); } }
+        ResizeEdge { x: 0px; y: parent.height - 12px; width: 12px; height: 12px; edge: 7; cursor: MouseCursor.nesw-resize; started(edge) => { root.begin-resize(edge); } dragged => { root.resize-move(); } }
+        ResizeEdge { x: parent.width - 12px; y: parent.height - 12px; width: 12px; height: 12px; edge: 8; cursor: MouseCursor.nwse-resize; started(edge) => { root.begin-resize(edge); } dragged => { root.resize-move(); } }
+    }
+}

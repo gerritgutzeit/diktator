@@ -15,29 +15,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: dtolnay/rust-toolchain@stable
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "8.0.x"
 
-      - name: Version from tag or csproj
+      - name: Version from tag or Cargo.toml
         id: ver
         shell: bash
         run: |
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
           else
-            echo "version=$(grep -oP '(?<=<Version>)[^<]+' src/Diktator/Diktator.csproj | head -1)" >> "$GITHUB_OUTPUT"
+            echo "version=$(grep -m1 '^version' crates/diktator/Cargo.toml | cut -d'"' -f2)" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Publish self-contained app
-        run: >
-          dotnet publish src/Diktator/Diktator.csproj
-          -c Release
-          -r win-x64
-          --self-contained true
-          -p:Version=${{ steps.ver.outputs.version }}
-          -p:DebugType=none
-          -o publish
+      - name: Build Rust release
+        run: cargo build --release -p diktator
+
+      - name: Stage publish folder
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force publish | Out-Null
+          Copy-Item target/release/diktator.exe publish/Diktator.exe
 
       - name: Install vpk
         run: dotnet tool install -g vpk --version 1.2.161

@@ -15,3 +15,11 @@ jobs:
           dotnet-version: "8.0.x"
       - name: Restore and build
         run: dotnet build Diktator.sln -c Release
+
+  cargo:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build Rust
+        run: cargo build --release -p diktator

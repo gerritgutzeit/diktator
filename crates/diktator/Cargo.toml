@@ -1,0 +1,46 @@
+[package]
+name = "diktator"
+version = "2.0.0"
+edition = "2021"
+description = "Automatische Transkription vom Philips Diktiergerät"
+publish = false
+
+[dependencies]
+anyhow = "1"
+arboard = "3"
+base64 = "0.22"
+chrono = { version = "0.4", features = ["serde", "clock"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+muda = "0.15"
+once_cell = "1"
+regex = "1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "multipart", "rustls-tls"] }
+rfd = "0.15"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+slint = "1.18"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "sync", "fs"] }
+tray-icon = "0.19"
+velopack = "1.2"
+winreg = "0.52"
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Security",
+    "Win32_Security_Cryptography",
+    "Win32_Storage_FileSystem",
+    "Win32_System_DataExchange",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Memory",
+    "Win32_System_Registry",
+    "Win32_System_Threading",
+    "Win32_System_IO",
+    "Win32_UI_HiDpi",
+    "Win32_UI_WindowsAndMessaging",
+] }
+wmi = "0.15"
+
+[build-dependencies]
+slint-build = "1.18"
+winresource = "0.1"
