@@ -1,0 +1,15 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+appsettings.local.json
+*.mp3
+*.MP3
+.idea/
+*.log
+publish/
+artifacts/
+.cursor/
+*.exe
+!src/Diktator/Assets/**
