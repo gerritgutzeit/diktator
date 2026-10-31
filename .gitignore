@@ -10,6 +10,8 @@ appsettings.local.json
 *.log
 publish/
 artifacts/
+Releases/
+releases/
 .cursor/
 *.exe
 !src/Diktator/Assets/**

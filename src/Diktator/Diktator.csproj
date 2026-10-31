@@ -8,7 +8,8 @@
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <ApplicationTitle>Diktator</ApplicationTitle>
-    <Version>1.0.0</Version>
+    <StartupObject>Diktator.Program</StartupObject>
+    <Version>1.1.0</Version>
     <AssemblyTitle>Diktator</AssemblyTitle>
     <Product>Diktator</Product>
     <Description>Automatische Transkription vom Philips Diktiergerät</Description>
@@ -18,8 +19,14 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="System.Management" Version="10.0.14" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.14" />
+    <PackageReference Include="Velopack" Version="1.2.161" />
     <PackageReference Include="WPF-UI" Version="4.3.0" />
     <PackageReference Include="WPF-UI.Tray" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ApplicationDefinition Remove="App.xaml" />
+    <Page Include="App.xaml" />
   </ItemGroup>
 
   <ItemGroup>

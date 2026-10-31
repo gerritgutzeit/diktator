@@ -30,12 +30,15 @@ Beispiel-Endpunkt: `https://<dein-host>/v1/audio/transcriptions`
 
 ## Release (GitHub)
 
-Jeder Tag `v*` (z. B. `v1.0.0`) baut auf `windows-latest` eine selbstständige `Diktator.exe` und hängt sie an das GitHub-Release.
+Unter [Releases](https://github.com/gerritgutzeit/diktator/releases) liegt `Diktator-Setup.exe`. Einmal installieren, danach holt die App neue Versionen selbst von GitHub (Velopack).
+
+Jeder Tag `v*` (z. B. `v1.1.0`) baut auf `windows-latest` den Installer und die Update-Pakete.
 
 Manuell:
 
 ```powershell
-dotnet publish src/Diktator -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o publish
+dotnet publish src/Diktator -c Release -r win-x64 --self-contained -o publish
+vpk pack -u Diktator -v 1.1.0 -p publish --mainExe Diktator.exe -i src/Diktator/Assets/app.ico
 ```
 
 ## Verhalten

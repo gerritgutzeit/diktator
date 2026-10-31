@@ -321,6 +321,14 @@
                                    FontSize="12"
                                    Margin="0,12,0,0"
                                    TextWrapping="Wrap" />
+
+                        <TextBlock Foreground="#5C5C66"
+                                   FontSize="11"
+                                   Margin="0,18,0,0">
+                            <Run Text="Version " />
+                            <Run Text="{Binding AppVersion, Mode=OneWay}" />
+                            <Run Text=" · Updates kommen automatisch von GitHub." />
+                        </TextBlock>
                     </StackPanel>
                 </ScrollViewer>
             </Border>

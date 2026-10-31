@@ -50,6 +50,15 @@ public partial class MainWindow
         TrayIcon.Register();
         _watcher.Attach();
         _ = _viewModel.HandleDeviceChangeAsync();
+        _ = AppUpdater.CheckAsync(
+            () => Dispatcher.Invoke(() => _viewModel.IsBusy),
+            () => Dispatcher.Invoke(() => TrayIcon.Unregister()),
+            msg => Dispatcher.Invoke(() =>
+            {
+                TrayIcon.TooltipText = msg;
+                _viewModel.SettingsMessage = msg;
+            }),
+            CancellationToken.None);
     }
 
     private void OnClosing(object? sender, CancelEventArgs e)

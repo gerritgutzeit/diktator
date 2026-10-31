@@ -33,6 +33,8 @@ internal partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _settingsAutostart;
     [ObservableProperty] private string _settingsMessage = "";
 
+    public string AppVersion { get; } = AppUpdater.DisplayVersion;
+
     public ObservableCollection<TranscriptEntry> History { get; } = [];
 
     public event Action<string>? ToastRequested;
