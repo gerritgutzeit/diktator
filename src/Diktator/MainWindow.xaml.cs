@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Windows;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Diktator.Services;
 using Diktator.ViewModels;
 using Wpf.Ui.Controls;
@@ -24,6 +26,7 @@ public partial class MainWindow
         });
         Loaded += OnLoaded;
         Closing += OnClosing;
+        DpiChanged += (_, _) => ApplyTrayIcon();
     }
 
     public void Reveal()
@@ -47,6 +50,7 @@ public partial class MainWindow
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        ApplyTrayIcon();
         TrayIcon.Register();
         _watcher.Attach();
         _ = _viewModel.HandleDeviceChangeAsync();
@@ -97,5 +101,16 @@ public partial class MainWindow
     private void OnToast(string message)
     {
         Dispatcher.Invoke(() => TrayIcon.TooltipText = message);
+    }
+
+    private void ApplyTrayIcon()
+    {
+        var uri = new Uri("pack://application:,,,/Assets/app.ico", UriKind.Absolute);
+        var decoder = BitmapDecoder.Create(uri, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+        var target = 16 * VisualTreeHelper.GetDpi(this).PixelsPerDip;
+        TrayIcon.Icon = decoder.Frames
+            .OrderBy(frame => Math.Abs(frame.PixelWidth - target))
+            .ThenBy(frame => frame.PixelWidth)
+            .First();
     }
 }

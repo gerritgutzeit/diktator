@@ -22,7 +22,7 @@ internal static class AppUpdater
                 // Not a Velopack install (e.g. dotnet run).
             }
 
-            return typeof(AppUpdater).Assembly.GetName().Version?.ToString(3) ?? "1.1.0";
+            return typeof(AppUpdater).Assembly.GetName().Version?.ToString(3) ?? "1.2.0";
         }
     }
 

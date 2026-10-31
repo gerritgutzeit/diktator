@@ -23,6 +23,7 @@ internal sealed class AppSettings
     public string Language { get; set; } = DefaultLanguage;
     public string Model { get; set; } = DefaultModel;
     public bool Autostart { get; set; }
+    public string TranscriptFolder { get; set; } = "";
 
     [JsonIgnore]
     public string ApiKey { get; set; } = "";

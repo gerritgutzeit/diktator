@@ -1,8 +1,10 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Diktator.Services;
+using Microsoft.Win32;
 
 namespace Diktator.ViewModels;
 
@@ -31,6 +33,7 @@ internal partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _settingsApiKey = "";
     [ObservableProperty] private string _settingsLanguage = AppSettings.DefaultLanguage;
     [ObservableProperty] private bool _settingsAutostart;
+    [ObservableProperty] private string _settingsTranscriptFolder = "";
     [ObservableProperty] private string _settingsMessage = "";
 
     public string AppVersion { get; } = AppUpdater.DisplayVersion;
@@ -132,6 +135,7 @@ internal partial class MainViewModel : ObservableObject
         settings.ApiKey = SettingsApiKey.Trim();
         settings.Language = string.IsNullOrWhiteSpace(SettingsLanguage) ? AppSettings.DefaultLanguage : SettingsLanguage.Trim();
         settings.Autostart = SettingsAutostart;
+        settings.TranscriptFolder = SettingsTranscriptFolder.Trim();
         settings.Save();
         AutostartService.SetEnabled(SettingsAutostart);
         _coordinator.ReloadSettings();
@@ -168,6 +172,64 @@ internal partial class MainViewModel : ObservableObject
         SettingsApiKey = settings.ApiKey;
         SettingsLanguage = settings.Language;
         SettingsAutostart = settings.Autostart || AutostartService.IsEnabled();
+        SettingsTranscriptFolder = settings.TranscriptFolder;
+    }
+
+    [RelayCommand]
+    private void BrowseTranscriptFolder()
+    {
+        var dialog = new OpenFolderDialog
+        {
+            Title = "Ordner für Transkripte",
+            FolderName = SettingsTranscriptFolder
+        };
+        if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.FolderName))
+            return;
+
+        SettingsTranscriptFolder = dialog.FolderName;
+        SaveSettings();
+        ExportAllTranscripts();
+    }
+
+    [RelayCommand]
+    private void ExportAllTranscripts()
+    {
+        SaveSettings();
+        var count = _coordinator.ExportAll(out var error);
+        if (!string.IsNullOrEmpty(error) && count == 0)
+        {
+            SettingsMessage = error;
+            return;
+        }
+
+        SettingsMessage = count == 0
+            ? $"Ordner gesetzt, noch keine Transkripte: {SettingsTranscriptFolder}"
+            : $"{count} Transkripte abgelegt in {SettingsTranscriptFolder}";
+        ToastRequested?.Invoke(SettingsMessage);
+    }
+
+    [RelayCommand]
+    private void OpenTranscriptFolder()
+    {
+        if (string.IsNullOrWhiteSpace(SettingsTranscriptFolder))
+        {
+            BrowseTranscriptFolder();
+            return;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(SettingsTranscriptFolder);
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = SettingsTranscriptFolder,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            SettingsMessage = ex.Message;
+        }
     }
 
     private async Task RunAsync(bool showWindowOnNew)

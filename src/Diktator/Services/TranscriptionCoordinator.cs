@@ -89,8 +89,9 @@ internal sealed class TranscriptionCoordinator
 
                     var local = await RecordingPicker.CopyToInboxAsync(recording, cancellationToken);
                     var text = await _whisper.TranscribeAsync(local, Settings, cancellationToken);
-                    _store.Save(device.VolumeSerial, recording.FileName, recording.Size, text);
+                    var saved = _store.Save(device.VolumeSerial, recording.FileName, recording.Size, text);
                     await TrySummarizeAsync(device.VolumeSerial, recording.FileName, recording.Size, text, cancellationToken);
+                    Export(saved);
                     lastDone = recording;
                     lastText = text;
                     done++;
@@ -156,6 +157,9 @@ internal sealed class TranscriptionCoordinator
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 await TrySummarizeAsync(entry.VolumeSerial, entry.FileName, entry.Size, entry.Text, cancellationToken);
+                var updated = _store.Find(entry.VolumeSerial, entry.FileName, entry.Size);
+                if (updated is not null)
+                    Export(updated);
             }
         }
         finally
@@ -184,6 +188,17 @@ internal sealed class TranscriptionCoordinator
         {
             // Zusammenfassung ist optional.
         }
+    }
+
+    public int ExportAll(out string? error)
+    {
+        ReloadSettings();
+        return TranscriptFolder.WriteAll(Settings.TranscriptFolder, _store.All(), out error);
+    }
+
+    private void Export(TranscriptEntry entry)
+    {
+        TranscriptFolder.TryWrite(Settings.TranscriptFolder, entry, out _);
     }
 
     private static async Task<PhilipsDevice?> WaitForDeviceAsync(CancellationToken cancellationToken)

@@ -18,8 +18,7 @@
                  WindowCornerPreference="Round"
                  Background="#F2111113"
                  ResizeMode="CanResize"
-                 ShowInTaskbar="True"
-                 Icon="pack://application:,,,/Assets/diktator-app-icon.png">
+                 ShowInTaskbar="True">
 
     <ui:FluentWindow.Resources>
         <local:InverseBoolToVisConverter x:Key="InverseBoolToVis" />
@@ -37,7 +36,7 @@
                          FocusOnLeftClick="True"
                          MenuOnRightClick="True"
                          TooltipText="Diktator"
-                         Icon="pack://application:,,,/Assets/diktator-icon-transparent.png"
+                         Icon="pack://application:,,,/Assets/app.ico"
                          LeftClick="OnTrayLeftClick">
             <tray:NotifyIcon.Menu>
                 <ContextMenu>
@@ -56,7 +55,7 @@
                      ForceShutdown="False"
                      CloseClicked="OnTitleBarClose">
             <ui:TitleBar.Icon>
-                <ui:ImageIcon Source="pack://application:,,,/Assets/diktator-app-icon.png" />
+                <ui:ImageIcon Source="pack://application:,,,/Assets/app-48.png" />
             </ui:TitleBar.Icon>
         </ui:TitleBar>
 
@@ -304,7 +303,40 @@
                         <CheckBox Content="Beim Windows-Start ausführen"
                                   IsChecked="{Binding SettingsAutostart}"
                                   Foreground="#E8E8ED"
-                                  Margin="0,0,0,18" />
+                                  Margin="0,0,0,16" />
+
+                        <TextBlock Text="Transkript-Ordner"
+                                   Foreground="#8A8A94"
+                                   FontSize="12"
+                                   Margin="0,0,0,6" />
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ui:TextBox Grid.Column="0"
+                                        Text="{Binding SettingsTranscriptFolder, UpdateSourceTrigger=PropertyChanged}"
+                                        PlaceholderText="Ordner wählen, in dem alle Texte landen" />
+                            <ui:Button Grid.Column="1"
+                                       Content="Ordner…"
+                                       Appearance="Secondary"
+                                       Margin="8,0,0,0"
+                                       Command="{Binding BrowseTranscriptFolderCommand}" />
+                        </Grid>
+                        <TextBlock Text="Neue Transkripte werden dort als .txt abgelegt (z. B. Gutz0485.txt)."
+                                   Foreground="#5C5C66"
+                                   FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Margin="0,0,0,8" />
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,18">
+                            <ui:Button Content="Alles ablegen"
+                                       Appearance="Secondary"
+                                       Command="{Binding ExportAllTranscriptsCommand}" />
+                            <ui:Button Content="Ordner öffnen"
+                                       Appearance="Transparent"
+                                       Margin="8,0,0,0"
+                                       Command="{Binding OpenTranscriptFolderCommand}" />
+                        </StackPanel>
 
                         <StackPanel Orientation="Horizontal">
                             <ui:Button Content="Speichern"

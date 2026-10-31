@@ -30,15 +30,15 @@ Beispiel-Endpunkt: `https://<dein-host>/v1/audio/transcriptions`
 
 ## Release (GitHub)
 
-Unter [Releases](https://github.com/gerritgutzeit/diktator/releases) liegt `Diktator-Setup.exe`. Einmal installieren, danach holt die App neue Versionen selbst von GitHub (Velopack).
+Unter [Releases](https://github.com/gerritgutzeit/diktator/releases) liegt `Diktator-win-Setup.exe`. Einmal installieren, danach holt die App neue Versionen selbst von GitHub (Velopack).
 
-Jeder Tag `v*` (z. B. `v1.1.0`) baut auf `windows-latest` den Installer und die Update-Pakete.
+Jeder Tag `v*` (z. B. `v1.2.0`) baut auf `windows-latest` den Installer und die Update-Pakete.
 
 Manuell:
 
 ```powershell
 dotnet publish src/Diktator -c Release -r win-x64 --self-contained -o publish
-vpk pack -u Diktator -v 1.1.0 -p publish --mainExe Diktator.exe -i src/Diktator/Assets/app.ico
+vpk pack -u Diktator -v 1.2.0 -p publish --mainExe Diktator.exe -i src/Diktator/Assets/app.ico
 ```
 
 ## Verhalten
@@ -48,5 +48,6 @@ vpk pack -u Diktator -v 1.1.0 -p publish --mainExe Diktator.exe -i src/Diktator/
 - Mehrere neue → alle werden transkribiert, Fenster öffnet sich, Verlauf listet sie, Zwischenablage = die neueste
 - Datei wird nach `%LOCALAPPDATA%\Diktator\inbox\` kopiert
 - **Löschen** verschiebt die MP3 auf dem Gerät nach `old\` (Papierkorb, wird ignoriert)
+- Optionaler **Transkript-Ordner** in den Einstellungen: Texte als `.txt` ablegen
 - API-Key liegt per DPAPI in `%LOCALAPPDATA%\Diktator\settings.json`
 - Schließen legt die App in den Tray; Beenden nur über das Tray-Menü

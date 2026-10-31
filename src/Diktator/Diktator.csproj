@@ -9,7 +9,7 @@
     <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <ApplicationTitle>Diktator</ApplicationTitle>
     <StartupObject>Diktator.Program</StartupObject>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <AssemblyTitle>Diktator</AssemblyTitle>
     <Product>Diktator</Product>
     <Description>Automatische Transkription vom Philips Diktiergerät</Description>
@@ -31,6 +31,9 @@
 
   <ItemGroup>
     <Resource Include="Assets\app.ico" />
+    <Resource Include="Assets\app-32.png" />
+    <Resource Include="Assets\app-48.png" />
+    <Resource Include="Assets\app-64.png" />
     <Resource Include="Assets\diktator-app-icon.png" />
     <Resource Include="Assets\diktator-icon-transparent.png" />
   </ItemGroup>
