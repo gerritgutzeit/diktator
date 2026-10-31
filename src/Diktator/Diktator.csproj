@@ -24,7 +24,8 @@
 
   <ItemGroup>
     <Resource Include="Assets\app.ico" />
-    <Resource Include="Assets\app.png" />
+    <Resource Include="Assets\diktator-app-icon.png" />
+    <Resource Include="Assets\diktator-icon-transparent.png" />
   </ItemGroup>
 
 </Project>

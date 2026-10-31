@@ -1,5 +1,9 @@
 # Diktator
 
+<p align="center">
+  <img src="src/Diktator/Assets/diktator-github-repo.png" alt="Diktator – Deine Stimme. Dein Text." width="840" />
+</p>
+
 Hintergrund-App für Windows: erkennt ein Philips Pocket Memo (DPM4), sobald es per USB als Laufwerk erscheint, schickt **alle noch nicht transkribierten MP3s** an einen OpenAI-kompatiblen Whisper-Endpunkt und legt den neuesten Text in die Zwischenablage.
 
 Läuft im Infobereich. Dunkles Overlay mit Transkript, Verlauf, Kurzfassung und Kopieren-Button.

@@ -18,7 +18,8 @@
                  WindowCornerPreference="Round"
                  Background="#F2111113"
                  ResizeMode="CanResize"
-                 ShowInTaskbar="True">
+                 ShowInTaskbar="True"
+                 Icon="pack://application:,,,/Assets/diktator-app-icon.png">
 
     <ui:FluentWindow.Resources>
         <local:InverseBoolToVisConverter x:Key="InverseBoolToVis" />
@@ -36,7 +37,7 @@
                          FocusOnLeftClick="True"
                          MenuOnRightClick="True"
                          TooltipText="Diktator"
-                         Icon="pack://application:,,,/Assets/app.png"
+                         Icon="pack://application:,,,/Assets/diktator-icon-transparent.png"
                          LeftClick="OnTrayLeftClick">
             <tray:NotifyIcon.Menu>
                 <ContextMenu>
@@ -53,7 +54,11 @@
                      Title="Diktator"
                      ShowMaximize="False"
                      ForceShutdown="False"
-                     CloseClicked="OnTitleBarClose" />
+                     CloseClicked="OnTitleBarClose">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="pack://application:,,,/Assets/diktator-app-icon.png" />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
 
         <Grid Grid.Row="1" Margin="20,4,20,8">
             <Grid.RowDefinitions>
