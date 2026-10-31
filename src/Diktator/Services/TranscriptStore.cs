@@ -9,6 +9,7 @@ internal sealed class TranscriptEntry
     public string FileName { get; set; } = "";
     public long Size { get; set; }
     public string Text { get; set; } = "";
+    public string? Title { get; set; }
     public string? Summary { get; set; }
     public DateTime TranscribedAt { get; set; }
 
@@ -104,7 +105,10 @@ internal sealed class TranscriptStore
             }
 
             if (!string.Equals(existing.Text, text, StringComparison.Ordinal))
+            {
                 existing.Summary = null;
+                existing.Title = null;
+            }
             existing.Text = text;
             existing.TranscribedAt = DateTime.Now;
             Persist();
@@ -112,13 +116,15 @@ internal sealed class TranscriptStore
         }
     }
 
-    public void SaveSummary(string volumeSerial, string fileName, long size, string summary)
+    public void SaveHeadline(string volumeSerial, string fileName, long size, string? title, string summary)
     {
         lock (_gate)
         {
             var existing = _entries.FirstOrDefault(e => e.SameAs(volumeSerial, fileName, size));
             if (existing is null)
                 return;
+            if (!string.IsNullOrWhiteSpace(title))
+                existing.Title = title.Trim();
             existing.Summary = summary.Trim();
             Persist();
         }

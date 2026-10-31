@@ -150,7 +150,8 @@ internal sealed class TranscriptionCoordinator
                 return;
 
             var missing = _store.All()
-                .Where(e => string.IsNullOrWhiteSpace(e.Summary) && !string.IsNullOrWhiteSpace(e.Text))
+                .Where(e => !string.IsNullOrWhiteSpace(e.Text) &&
+                            (string.IsNullOrWhiteSpace(e.Summary) || string.IsNullOrWhiteSpace(e.Title)))
                 .ToList();
 
             foreach (var entry in missing)
@@ -180,9 +181,9 @@ internal sealed class TranscriptionCoordinator
 
         try
         {
-            var summary = await _whisper.SummarizeAsync(text, Settings, cancellationToken);
-            if (!string.IsNullOrWhiteSpace(summary))
-                _store.SaveSummary(volumeSerial, fileName, size, summary);
+            var headline = await _whisper.SummarizeAsync(text, Settings, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(headline.Summary) || !string.IsNullOrWhiteSpace(headline.Title))
+                _store.SaveHeadline(volumeSerial, fileName, size, headline.Title, headline.Summary);
         }
         catch
         {

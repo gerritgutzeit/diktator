@@ -35,6 +35,10 @@ internal partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _settingsAutostart;
     [ObservableProperty] private string _settingsTranscriptFolder = "";
     [ObservableProperty] private string _settingsMessage = "";
+    [ObservableProperty] private string _updateStatusText = "";
+    [ObservableProperty] private bool _hasUpdate;
+    [ObservableProperty] private bool _isCheckingUpdate;
+    [ObservableProperty] private bool _isInstallingUpdate;
 
     public string AppVersion { get; } = AppUpdater.DisplayVersion;
 
@@ -42,6 +46,7 @@ internal partial class MainViewModel : ObservableObject
 
     public event Action<string>? ToastRequested;
     public event Action? ShowWindowRequested;
+    public event Action? UpdateApplyRequested;
 
     public MainViewModel()
     {
@@ -229,6 +234,54 @@ internal partial class MainViewModel : ObservableObject
         catch (Exception ex)
         {
             SettingsMessage = ex.Message;
+        }
+    }
+
+    [RelayCommand]
+    private async Task CheckForUpdatesAsync()
+    {
+        if (IsCheckingUpdate || IsInstallingUpdate)
+            return;
+
+        IsCheckingUpdate = true;
+        HasUpdate = false;
+        UpdateStatusText = "Prüfe auf Aktualisierung…";
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            var result = await AppUpdater.CheckAsync(cts.Token);
+            HasUpdate = result.UpdateAvailable;
+            UpdateStatusText = result.Message;
+        }
+        catch (Exception ex)
+        {
+            UpdateStatusText = ex.Message;
+        }
+        finally
+        {
+            IsCheckingUpdate = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task InstallUpdateAsync()
+    {
+        if (!HasUpdate || IsInstallingUpdate)
+            return;
+
+        IsInstallingUpdate = true;
+        UpdateStatusText = "Update wird geladen…";
+        try
+        {
+            await AppUpdater.ApplyAsync(
+                () => UpdateApplyRequested?.Invoke(),
+                percent => UpdateStatusText = $"Update wird geladen… {percent}%",
+                CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            UpdateStatusText = ex.Message;
+            IsInstallingUpdate = false;
         }
     }
 

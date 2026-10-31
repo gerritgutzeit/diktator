@@ -323,7 +323,7 @@
                                        Margin="8,0,0,0"
                                        Command="{Binding BrowseTranscriptFolderCommand}" />
                         </Grid>
-                        <TextBlock Text="Neue Transkripte werden dort als .txt abgelegt (z. B. Gutz0485.txt)."
+                        <TextBlock Text="Neue Transkripte landen dort als Datum_Uhrzeit Titel.txt, z. B. 2026-10-31_14-02 Meeting mit Steuerberater.txt."
                                    Foreground="#5C5C66"
                                    FontSize="11"
                                    TextWrapping="Wrap"
@@ -356,11 +356,24 @@
 
                         <TextBlock Foreground="#5C5C66"
                                    FontSize="11"
-                                   Margin="0,18,0,0">
+                                   Margin="0,18,0,8">
                             <Run Text="Version " />
                             <Run Text="{Binding AppVersion, Mode=OneWay}" />
-                            <Run Text=" · Updates kommen automatisch von GitHub." />
                         </TextBlock>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <ui:Button Content="Auf Aktualisierung prüfen"
+                                       Appearance="Secondary"
+                                       Command="{Binding CheckForUpdatesCommand}" />
+                            <ui:Button Content="Aktualisieren"
+                                       Appearance="Primary"
+                                       Margin="8,0,0,0"
+                                       Command="{Binding InstallUpdateCommand}"
+                                       IsEnabled="{Binding HasUpdate}" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding UpdateStatusText}"
+                                   Foreground="#8A8A94"
+                                   FontSize="12"
+                                   TextWrapping="Wrap" />
                     </StackPanel>
                 </ScrollViewer>
             </Border>

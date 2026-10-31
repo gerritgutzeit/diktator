@@ -20,6 +20,7 @@ public partial class MainWindow
         DataContext = _viewModel;
         _viewModel.ShowWindowRequested += () => Dispatcher.Invoke(Reveal);
         _viewModel.ToastRequested += OnToast;
+        _viewModel.UpdateApplyRequested += () => Dispatcher.Invoke(() => TrayIcon.Unregister());
         _watcher = new DeviceWatcher(this, () =>
         {
             Dispatcher.InvokeAsync(() => _ = _viewModel.HandleDeviceChangeAsync());
@@ -54,15 +55,6 @@ public partial class MainWindow
         TrayIcon.Register();
         _watcher.Attach();
         _ = _viewModel.HandleDeviceChangeAsync();
-        _ = AppUpdater.CheckAsync(
-            () => Dispatcher.Invoke(() => _viewModel.IsBusy),
-            () => Dispatcher.Invoke(() => TrayIcon.Unregister()),
-            msg => Dispatcher.Invoke(() =>
-            {
-                TrayIcon.TooltipText = msg;
-                _viewModel.SettingsMessage = msg;
-            }),
-            CancellationToken.None);
     }
 
     private void OnClosing(object? sender, CancelEventArgs e)

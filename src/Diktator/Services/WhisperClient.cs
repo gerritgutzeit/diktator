@@ -95,7 +95,7 @@ internal sealed class WhisperClient
             throw ToError((int)response.StatusCode, body);
     }
 
-    public async Task<string> SummarizeAsync(
+    public async Task<TranscriptHeadline> SummarizeAsync(
         string transcript,
         AppSettings settings,
         CancellationToken cancellationToken)
@@ -112,7 +112,7 @@ internal sealed class WhisperClient
                 new
                 {
                     role = "system",
-                    content = "Fasse das Diktat in einem einzigen kurzen deutschen Satz zusammen (max. etwa 12 Wörter). Kein Vorspann, keine Anführungszeichen."
+                    content = "Antworte ausschließlich mit JSON, ohne Markdown: {\"title\":\"...\",\"summary\":\"...\"}. title = kurzer deutscher Dateititel, 3 bis 6 Wörter, kein Satzzeichen außer Bindestrich, kein Punkt am Ende. summary = ein einziger kurzer deutscher Satz, maximal etwa 12 Wörter."
                 },
                 new { role = "user", content = clipped }
             }
@@ -142,7 +142,7 @@ internal sealed class WhisperClient
         if (!response.IsSuccessStatusCode)
             throw ToError((int)response.StatusCode, body);
 
-        return ParseChat(body);
+        return ParseHeadline(body);
     }
 
     private static WhisperException ToError(int status, string body)
@@ -195,6 +195,25 @@ internal sealed class WhisperClient
         return trimmed;
     }
 
+    private static TranscriptHeadline ParseHeadline(string body)
+    {
+        var content = ParseChat(body);
+        var json = UnwrapJson(content);
+        try
+        {
+            using var doc = JsonDocument.Parse(json);
+            var title = doc.RootElement.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "";
+            var summary = doc.RootElement.TryGetProperty("summary", out var s) ? s.GetString() ?? "" : "";
+            if (string.IsNullOrWhiteSpace(summary))
+                summary = content;
+            return new TranscriptHeadline(title.Trim().Trim('"'), summary.Trim().Trim('"'));
+        }
+        catch
+        {
+            return new TranscriptHeadline("", content);
+        }
+    }
+
     private static string ParseChat(string body)
     {
         try
@@ -214,4 +233,20 @@ internal sealed class WhisperClient
 
         return body.Trim();
     }
+
+    private static string UnwrapJson(string content)
+    {
+        var text = content.Trim();
+        if (text.StartsWith("```", StringComparison.Ordinal))
+        {
+            var start = text.IndexOf('{');
+            var end = text.LastIndexOf('}');
+            if (start >= 0 && end > start)
+                return text[start..(end + 1)];
+        }
+
+        return text;
+    }
 }
+
+internal sealed record TranscriptHeadline(string Title, string Summary);

@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Diktator.Services;
 
@@ -56,22 +57,50 @@ internal static class TranscriptFolder
 
     public static string FileNameFor(TranscriptEntry entry)
     {
-        var stem = Path.GetFileNameWithoutExtension(entry.FileName);
-        if (string.IsNullOrWhiteSpace(stem))
-            stem = "transkript";
+        var when = entry.TranscribedAt == default ? DateTime.Now : entry.TranscribedAt;
+        var stamp = when.ToString("yyyy-MM-dd_HH-mm");
+        var title = SanitizeTitle(entry.Title);
+        if (string.IsNullOrWhiteSpace(title))
+            title = SanitizeTitle(entry.Summary);
+        if (string.IsNullOrWhiteSpace(title))
+            title = SanitizeTitle(Path.GetFileNameWithoutExtension(entry.FileName));
+        if (string.IsNullOrWhiteSpace(title))
+            title = "Transkript";
+        return $"{stamp} {title}.txt";
+    }
+
+    internal static string SanitizeTitle(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return "";
+
+        var text = raw.Trim().Trim('"').Trim('\'');
+        text = text.Replace(':', ' ').Replace('/', '-').Replace('\\', '-');
         foreach (var c in Path.GetInvalidFileNameChars())
-            stem = stem.Replace(c, '_');
-        return stem + ".txt";
+            text = text.Replace(c, ' ');
+        text = Regex.Replace(text, @"\s+", " ").Trim().TrimEnd('.');
+        if (text.Length > 80)
+        {
+            var cut = text[..80];
+            var space = cut.LastIndexOf(' ');
+            text = space >= 24 ? cut[..space] : cut;
+        }
+
+        return text;
     }
 
     private static string Format(TranscriptEntry entry)
     {
         var sb = new StringBuilder();
+        var title = string.IsNullOrWhiteSpace(entry.Title) ? entry.Summary : entry.Title;
+        if (!string.IsNullOrWhiteSpace(title))
+            sb.AppendLine(title.Trim());
         if (!string.IsNullOrWhiteSpace(entry.FileName))
             sb.AppendLine(entry.FileName);
         if (entry.TranscribedAt != default)
             sb.AppendLine(entry.TranscribedAt.ToString("dd.MM.yyyy HH:mm"));
-        if (!string.IsNullOrWhiteSpace(entry.Summary))
+        if (!string.IsNullOrWhiteSpace(entry.Summary) &&
+            !string.Equals(entry.Summary.Trim(), title?.Trim(), StringComparison.Ordinal))
         {
             sb.AppendLine();
             sb.AppendLine(entry.Summary.Trim());
